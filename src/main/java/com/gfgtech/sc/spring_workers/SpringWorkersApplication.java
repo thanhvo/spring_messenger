@@ -1,4 +1,4 @@
-package com.example.spring_workers;
+package com.gfgtech.sc.spring_workers;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
