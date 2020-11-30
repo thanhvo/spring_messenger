@@ -1,71 +1,61 @@
 package com.gfgtech.sc.spring_workers.listener;
 
-import com.amazonaws.services.sqs.model.*;
-import com.gfgtech.sc.spring_workers.subscriber.SqsSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import com.amazonaws.services.sqs.AmazonSQSAsync;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import javax.annotation.PostConstruct;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-//@Component
+@Component
 public class ReactiveSqsListener {
-    public static final Logger LOGGER = LoggerFactory.getLogger(ReactiveSqsListener.class);
-    private final AmazonSQSAsync sqsAsyncClient;
-    private final String queueUrl;
-    private final String queueName = "spring_workers";
 
-    public ReactiveSqsListener(AmazonSQSAsync sqsAsyncClient) {
+    public static final Logger LOGGER = LoggerFactory.getLogger(ReactiveSqsListener.class);
+    private final SqsAsyncClient sqsAsyncClient;
+    private final String queueUrl;
+
+    public ReactiveSqsListener(SqsAsyncClient sqsAsyncClient) {
         this.sqsAsyncClient = sqsAsyncClient;
         try {
-            this.queueUrl = this.sqsAsyncClient.getQueueUrl(queueName).getQueueUrl();
+            this.queueUrl = this.sqsAsyncClient.getQueueUrl(
+                    GetQueueUrlRequest.builder().queueName("spring_workers").build()
+            ).get().queueUrl();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @PostConstruct
-    public void continuousListener()  {
-        Thread thread = new Thread(){
-            public void run(){
-                while (true) {
-                    CompletableFuture<ReceiveMessageResult> result = CompletableFuture.supplyAsync(() -> {
-                        ReceiveMessageResult message = null;
-                        try {
-                            ReceiveMessageRequest request = new ReceiveMessageRequest()
-                                .withQueueUrl(queueUrl)
-                                .withWaitTimeSeconds(10)
-                                .withVisibilityTimeout(30)
-                                .withMaxNumberOfMessages(10);
-                                message = sqsAsyncClient.receiveMessageAsync(request).get();
-                        } catch (InterruptedException e) {
-                                e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-                        return message;
-                    });
-                    Mono<ReceiveMessageResult> receiveMessageResponseMono = Mono.fromFuture(result);
-                    receiveMessageResponseMono
-                            .map(ReceiveMessageResult::getMessages)
-                            .subscribe(messages -> {
-                                        for (Message message : messages) {
-                                            LOGGER.info("message body: " + message.getBody());
-                                            DeleteMessageRequest request = new DeleteMessageRequest()
-                                                    .withQueueUrl(queueUrl)
-                                                    .withReceiptHandle(message.getReceiptHandle());
-                                            sqsAsyncClient.deleteMessageAsync(request);
-                                            LOGGER.info("deleted message with handle " + message.getReceiptHandle());
-                                        }
-                                    }
-                            );
-                }
-            }
-        };
-        thread.start();
+    public void continuousListener() {
+        Mono<ReceiveMessageResponse> receiveMessageResponseMono = Mono.fromFuture(() ->
+                sqsAsyncClient.receiveMessage(
+                        ReceiveMessageRequest.builder()
+                                .maxNumberOfMessages(5)
+                                .queueUrl(queueUrl)
+                                .waitTimeSeconds(10)
+                                .visibilityTimeout(30)
+                                .build()
+                )
+        );
+
+        receiveMessageResponseMono
+                .repeat()
+                .retry()
+                .map(ReceiveMessageResponse::messages)
+                .map(Flux::fromIterable)
+                .flatMap(messageFlux -> messageFlux)
+                .subscribe(message -> {
+                    LOGGER.info("message body: " + message.body());
+                    sqsAsyncClient.deleteMessage(DeleteMessageRequest.builder().queueUrl(queueUrl).receiptHandle(message.receiptHandle()).build())
+                            .thenAccept(deleteMessageResponse -> {
+                                LOGGER.info("deleted message with handle " + message.receiptHandle());
+                            });
+                });
     }
 }

@@ -4,15 +4,12 @@ import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.gfgtech.sc.spring_workers.listener.ReactiveSqsListener;
 import org.reactivestreams.Subscription;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.BaseSubscriber;
-
-import java.util.List;
 
 @Component
 public class SqsSubscriber<T> extends BaseSubscriber<T> {
