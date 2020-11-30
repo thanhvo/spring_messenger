@@ -12,7 +12,7 @@ import javax.annotation.PostConstruct;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-@Component
+//@Component
 public class ReactiveSqsListener {
     public static final Logger LOGGER = LoggerFactory.getLogger(ReactiveSqsListener.class);
     private final AmazonSQSAsync sqsAsyncClient;

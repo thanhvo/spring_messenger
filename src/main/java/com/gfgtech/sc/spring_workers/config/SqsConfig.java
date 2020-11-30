@@ -10,6 +10,10 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 // Marker annotation that tells spring to generate bean definitions at runtime for the methods annotated with @Bean annotation.
 @Configuration
@@ -44,6 +48,25 @@ public class SqsConfig {
                 .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(
                         new BasicAWSCredentials(awsAccessKey, awsSecretKey)))
+                .build();
+    }
+
+    @Bean
+    public SqsAsyncClient amazonSQSAsyncClient() {
+        return SqsAsyncClient.builder()
+                //.endpointOverride(URI.create("http://localhost:4566"))
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(new AwsCredentials() {
+                    @Override
+                    public String accessKeyId() {
+                        return awsAccessKey;
+                    }
+
+                    @Override
+                    public String secretAccessKey() {
+                        return awsSecretKey;
+                    }
+                }))
                 .build();
     }
 }
