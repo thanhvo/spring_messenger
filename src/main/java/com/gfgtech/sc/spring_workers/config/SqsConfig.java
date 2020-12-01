@@ -94,7 +94,9 @@ public class SqsConfig {
                 .build();
         for (int i = 1; i <= QUEUE_NUM; i++) {
             String queueName = "spring-worker-" + i;
-            listeners.add(new ReactiveSqsListener(sqsAsyncClient, queueName));
+            ReactiveSqsListener listener = new ReactiveSqsListener(sqsAsyncClient, queueName);
+            listener.listen();
+            listeners.add(listener);
         }
         return listeners;
     }
