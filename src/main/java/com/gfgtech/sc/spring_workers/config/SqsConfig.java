@@ -1,5 +1,6 @@
 package com.gfgtech.sc.spring_workers.config;
 
+import com.gfgtech.sc.spring_workers.listener.ReactiveSqsListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.aws.messaging.core.QueueMessagingTemplate;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,9 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // Marker annotation that tells spring to generate bean definitions at runtime for the methods annotated with @Bean annotation.
 @Configuration
@@ -30,6 +34,8 @@ public class SqsConfig {
     // Value is populated with the aws secret key
     @Value("${cloud.aws.credentials.secret-key}")
     private String awsSecretKey;
+
+    private final int QUEUE_NUM = 50;
 
     // @Bean annotation tells that a method produces a bean that is to be managed by the spring container.
     @Bean
@@ -54,7 +60,6 @@ public class SqsConfig {
     @Bean
     public SqsAsyncClient amazonSQSAsyncClient() {
         return SqsAsyncClient.builder()
-                //.endpointOverride(URI.create("http://localhost:4566"))
                 .region(Region.of(region))
                 .credentialsProvider(StaticCredentialsProvider.create(new AwsCredentials() {
                     @Override
@@ -69,4 +74,29 @@ public class SqsConfig {
                 }))
                 .build();
     }
+
+    @Bean
+    public List<ReactiveSqsListener> listeners() {
+        ArrayList<ReactiveSqsListener> listeners = new ArrayList<ReactiveSqsListener>();
+        SqsAsyncClient sqsAsyncClient = SqsAsyncClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(new AwsCredentials() {
+                    @Override
+                    public String accessKeyId() {
+                        return awsAccessKey;
+                    }
+
+                    @Override
+                    public String secretAccessKey() {
+                        return awsSecretKey;
+                    }
+                }))
+                .build();
+        for (int i = 1; i <= QUEUE_NUM; i++) {
+            String queueName = "spring-worker-" + i;
+            listeners.add(new ReactiveSqsListener(sqsAsyncClient,queueName ));
+        }
+        return listeners;
+    }
+
 }

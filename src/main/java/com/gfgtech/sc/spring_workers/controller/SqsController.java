@@ -18,8 +18,6 @@ import javax.validation.Valid;
 // Used to map incoming web requests onto the handler methods in the controller.
 @RequestMapping(value = "/sqs")
 public class SqsController {
-
-    // Name of the queue. Developers are free to choose their queue name.
     private static final String QUEUE = "spring_workers";
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SqsController.class);

@@ -13,18 +13,18 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import javax.annotation.PostConstruct;
 
-@Component
+//@Component
 public class ReactiveSqsListener {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ReactiveSqsListener.class);
     private final SqsAsyncClient sqsAsyncClient;
     private final String queueUrl;
 
-    public ReactiveSqsListener(SqsAsyncClient sqsAsyncClient) {
+    public ReactiveSqsListener(SqsAsyncClient sqsAsyncClient, String queueName) {
         this.sqsAsyncClient = sqsAsyncClient;
         try {
             this.queueUrl = this.sqsAsyncClient.getQueueUrl(
-                    GetQueueUrlRequest.builder().queueName("spring_workers").build()
+                    GetQueueUrlRequest.builder().queueName(queueName).build()
             ).get().queueUrl();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -32,7 +32,7 @@ public class ReactiveSqsListener {
     }
 
     @PostConstruct
-    public void continuousListener() {
+    public void listen() {
         Mono<ReceiveMessageResponse> receiveMessageResponseMono = Mono.fromFuture(() ->
                 sqsAsyncClient.receiveMessage(
                         ReceiveMessageRequest.builder()
