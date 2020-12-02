@@ -107,10 +107,24 @@ public class SqsConfig {
     @Bean
     public List<SqsPublisher> publishers()
     {
+        SqsAsyncClient sqsAsyncClient = SqsAsyncClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(new AwsCredentials() {
+                    @Override
+                    public String accessKeyId() {
+                        return awsAccessKey;
+                    }
+
+                    @Override
+                    public String secretAccessKey() {
+                        return awsSecretKey;
+                    }
+                }))
+                .build();
         ArrayList<SqsPublisher> publishers = new ArrayList<SqsPublisher>();
         for (int i = 1; i <= PUBLISHER_NUM; i++) {
             String queueName = "spring-worker-" + i;
-            SqsPublisher publisher = new SqsPublisher(new QueueMessagingTemplate(amazonSQSAsync()), queueName);
+            SqsPublisher publisher = new SqsPublisher(sqsAsyncClient, queueName);
             publisher.send();
             publishers.add(publisher);
         }

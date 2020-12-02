@@ -2,7 +2,6 @@ package com.gfgtech.sc.spring_workers.listener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
@@ -11,9 +10,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
-import javax.annotation.PostConstruct;
 
-//@Component
 public class ReactiveSqsListener {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ReactiveSqsListener.class);
@@ -31,7 +28,6 @@ public class ReactiveSqsListener {
         }
     }
 
-    @PostConstruct
     public void listen() {
         Mono<ReceiveMessageResponse> receiveMessageResponseMono = Mono.fromFuture(() ->
                 sqsAsyncClient.receiveMessage(
