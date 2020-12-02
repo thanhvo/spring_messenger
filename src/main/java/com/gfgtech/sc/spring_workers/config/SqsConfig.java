@@ -1,6 +1,8 @@
 package com.gfgtech.sc.spring_workers.config;
 
 import com.gfgtech.sc.spring_workers.listener.ReactiveSqsListener;
+import com.gfgtech.sc.spring_workers.publisher.SqsPublisher;
+import com.gfgtech.sc.spring_workers.service.PublishingService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.aws.messaging.core.QueueMessagingTemplate;
 import org.springframework.context.annotation.Bean;
@@ -36,6 +38,7 @@ public class SqsConfig {
     private String awsSecretKey;
 
     private final int QUEUE_NUM = 50;
+    private final int PUBLISHER_NUM = 50;
 
     // @Bean annotation tells that a method produces a bean that is to be managed by the spring container.
     @Bean
@@ -99,6 +102,19 @@ public class SqsConfig {
             listeners.add(listener);
         }
         return listeners;
+    }
+
+    @Bean
+    public List<SqsPublisher> publishers()
+    {
+        ArrayList<SqsPublisher> publishers = new ArrayList<SqsPublisher>();
+        for (int i = 1; i <= PUBLISHER_NUM; i++) {
+            String queueName = "spring-worker-" + i;
+            SqsPublisher publisher = new SqsPublisher(new QueueMessagingTemplate(amazonSQSAsync()), queueName);
+            publisher.send();
+            publishers.add(publisher);
+        }
+        return publishers;
     }
 
 }
