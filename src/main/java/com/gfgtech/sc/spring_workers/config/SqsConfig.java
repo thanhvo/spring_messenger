@@ -40,44 +40,6 @@ public class SqsConfig {
     private final int QUEUE_NUM = 50;
     private final int PUBLISHER_NUM = 50;
 
-    // @Bean annotation tells that a method produces a bean that is to be managed by the spring container.
-    @Bean
-    public QueueMessagingTemplate queueMessagingTemplate() {
-        return new QueueMessagingTemplate(amazonSQSAsync());
-    }
-
-    @Bean
-    // @Primary annotation gives a higher preference to a bean (when there are multiple beans of the same type).
-    @Primary
-    // AmazonSQSAsync is an interface for accessing the SQS asynchronously.
-    // Each asynchronous method will return a Java Future object representing the asynchronous operation.
-    public AmazonSQSAsync amazonSQSAsync() {
-        return AmazonSQSAsyncClientBuilder
-                .standard()
-                .withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(
-                        new BasicAWSCredentials(awsAccessKey, awsSecretKey)))
-                .build();
-    }
-
-    @Bean
-    public SqsAsyncClient amazonSQSAsyncClient() {
-        return SqsAsyncClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(new AwsCredentials() {
-                    @Override
-                    public String accessKeyId() {
-                        return awsAccessKey;
-                    }
-
-                    @Override
-                    public String secretAccessKey() {
-                        return awsSecretKey;
-                    }
-                }))
-                .build();
-    }
-
     @Bean
     public List<ReactiveSqsListener> listeners() {
         ArrayList<ReactiveSqsListener> listeners = new ArrayList<ReactiveSqsListener>();
@@ -95,6 +57,7 @@ public class SqsConfig {
                     }
                 }))
                 .build();
+
         for (int i = 1; i <= QUEUE_NUM; i++) {
             String queueName = "spring-worker-" + i;
             ReactiveSqsListener listener = new ReactiveSqsListener(sqsAsyncClient, queueName);
@@ -121,6 +84,7 @@ public class SqsConfig {
                     }
                 }))
                 .build();
+
         ArrayList<SqsPublisher> publishers = new ArrayList<SqsPublisher>();
         for (int i = 1; i <= PUBLISHER_NUM; i++) {
             String queueName = "spring-worker-" + i;

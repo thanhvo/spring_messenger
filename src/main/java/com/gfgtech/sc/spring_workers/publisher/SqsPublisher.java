@@ -6,7 +6,6 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-
 public class SqsPublisher {
     private final SqsAsyncClient sqsAsyncClient;
     private final String queueUrl;
