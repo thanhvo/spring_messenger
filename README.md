@@ -1,4 +1,4 @@
-# Spring Workers
+# Spring Messenger
 
 The project demonstrates how we apply Reactive streams to handle data from SQS queues. We use Terraform to manage resources on AWS. The scripts create 50
 SQS queues using specified credentials. The Spring Boot application then publishes and consumes the messages going through the queues and treats them as Reactive streams.
